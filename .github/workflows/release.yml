@@ -31,6 +31,7 @@ jobs:
           pyinstaller --onefile Zte_Onu.py --name zte_onu
 
       - name: Package
+        shell: bash
         run: |
           mkdir -p out
           if [ "${{ matrix.os }}" = "windows-latest" ]; then
