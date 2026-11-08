@@ -1,0 +1,55 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+
+      - name: Build with PyInstaller
+        run: |
+          pyinstaller --onefile Zte_Onu.py --name zte_onu
+
+      - name: Package
+        run: |
+          mkdir -p out
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            cp dist/zte_onu.exe out/
+            cd out && 7z a ../zte_onu_windows.zip *
+          elif [ "${{ matrix.os }}" = "macos-latest" ]; then
+            cp dist/zte_onu out/
+            cd out && tar -czf ../zte_onu_macos.tar.gz *
+          else
+            cp dist/zte_onu out/
+            cd out && tar -czf ../zte_onu_linux.tar.gz *
+          fi
+
+      - name: Upload to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            zte_onu_windows.zip
+            zte_onu_macos.tar.gz
+            zte_onu_linux.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
